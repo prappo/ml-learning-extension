@@ -117,17 +117,14 @@ body {
 .grid {
   flex: 1;
   display: grid;
-  grid-template-columns: 240px minmax(0, 1.05fr) minmax(0, 1fr);
+  /* min widths keep the code snippet + editor columns readable; they never
+     collapse to nothing. Below ~1000px the layout stacks to one column. */
+  grid-template-columns: 220px minmax(340px, 1.05fr) minmax(330px, 1fr);
   gap: 16px;
   padding: 16px 20px;
   min-height: 0;
 }
-@media (max-width: 1100px) {
-  .grid {
-    grid-template-columns: 200px 1fr 1fr;
-  }
-}
-@media (max-width: 860px) {
+@media (max-width: 1000px) {
   .grid {
     grid-template-columns: 1fr;
     overflow: auto;
@@ -219,6 +216,11 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+/* let the middle panel scroll when the code + walkthrough + note are tall,
+   instead of squeezing the code box */
+.snippet-panel {
+  overflow-y: auto;
 }
 
 .panel-head {
@@ -353,6 +355,8 @@ body {
 }
 .reference {
   flex: 1;
+  /* floor so the code stays visible even when a long walkthrough sits below it */
+  min-height: 180px;
   overflow: auto;
   margin: 0;
   padding: 14px;
