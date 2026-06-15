@@ -10,6 +10,8 @@ Written for an **absolute beginner who knows Python**: every term is defined in
 plain English, advanced topics are flagged "skim now, return later", and a
 **Start Here** lesson lays out the learning path.
 
+![AI Engineer Playground — roadmap, live visualizations, syntax-highlighted code with step-by-step walkthroughs, and real Python running in the browser](assets/demo.gif)
+
 ## Curriculum (90+ topics)
 
 | Area | Covers |
@@ -147,3 +149,7 @@ Reload the extension (`chrome://extensions` → ↻) to pick up changes.
   backend). Interactive/animated plots aren't supported — use `plt.show()`.
 - The first Matplotlib run loads its package locally (~20 MB into memory), so
   the first plot takes a few seconds; later ones are instant.
+
+## License
+
+[MIT](LICENSE) © Prappo
