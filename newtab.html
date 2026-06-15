@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ML Python Playground</title>
+    <link rel="stylesheet" href="newtab.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo">🧠</span>
+        <span class="title">AI Engineer Playground</span>
+      </div>
+      <div class="topbar-right">
+        <input id="search" class="search" type="text" placeholder="🔍 search topics…" autocomplete="off" />
+        <span id="progress" class="progress">0 / 0</span>
+        <button id="btn-reset" class="btn ghost sm" title="Reset your green progress ticks">↺ Reset</button>
+        <div class="status">
+          <span id="status-dot" class="dot loading"></span>
+          <span id="status-text">Starting…</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="grid">
+      <!-- LEFT: roadmap sidebar -->
+      <aside class="panel sidebar">
+        <div class="sidebar-head">
+          <span class="panel-label">Roadmap</span>
+          <button id="btn-new" class="btn ghost sm" title="Jump to a random topic">🎲 Random</button>
+        </div>
+        <nav id="roadmap" class="roadmap"></nav>
+      </aside>
+
+      <!-- MIDDLE: the snippet to study -->
+      <section class="panel snippet-panel">
+        <div class="panel-head">
+          <div>
+            <span id="snippet-cat" class="cat-badge"></span>
+            <span id="snippet-level" class="badge">Beginner</span>
+            <span id="ref-badge" class="ref-badge" style="display: none">📖 read-only here</span>
+            <span id="snippet-tags" class="tags"></span>
+          </div>
+          <div class="actions">
+            <button id="btn-prev" class="btn ghost sm" title="Previous topic">‹ Prev</button>
+            <button id="btn-next" class="btn ghost sm" title="Next topic">Next ›</button>
+          </div>
+        </div>
+        <h2 id="snippet-title">Loading…</h2>
+        <p id="snippet-desc" class="desc"></p>
+        <div class="viz-wrap">
+          <span class="viz-label">▶ live visualization</span>
+          <canvas id="viz" class="viz"></canvas>
+        </div>
+        <pre class="reference"><code id="snippet-code"></code></pre>
+        <div id="walkthrough" class="walkthrough"></div>
+        <div id="explain" class="explain"></div>
+        <div class="panel-foot">
+          <button id="btn-load" class="btn ghost">⤵ Load into editor</button>
+          <span class="hint">Try typing it yourself first, then run.</span>
+        </div>
+      </section>
+
+      <!-- RIGHT: the editor + output -->
+      <section class="panel editor-panel">
+        <div class="panel-head">
+          <span class="panel-label">Your code</span>
+          <div class="actions">
+            <button id="btn-clear" class="btn ghost">Clear</button>
+            <button id="btn-run" class="btn primary">▶ Run (Ctrl+Enter)</button>
+          </div>
+        </div>
+
+        <div class="editor-wrap">
+          <div id="gutter" class="gutter"></div>
+          <div class="code-area">
+            <pre id="highlight" class="highlight" aria-hidden="true"><code></code></pre>
+            <textarea
+              id="editor"
+              spellcheck="false"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              placeholder="# Type the Python snippet here, then press Ctrl+Enter to run it."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="output-head">
+          <span class="panel-label">Output</span>
+        </div>
+        <pre id="output" class="output"><span class="muted">Output will appear here.</span></pre>
+      </section>
+    </main>
+
+    <script src="snippets.js"></script>
+    <script src="walkthroughs.js"></script>
+    <script src="viz.js"></script>
+    <script src="highlight.js"></script>
+    <script src="pyodide/pyodide.js"></script>
+    <script src="pyodide-runtime.js"></script>
+    <script src="newtab.js"></script>
+  </body>
+</html>

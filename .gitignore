@@ -1,0 +1,13 @@
+# Bundled Pyodide runtime + ML wheels (~145 MB of binaries).
+# Re-create with:  node scripts/fetch-pyodide.mjs
+pyodide/
+
+# Node / tooling
+node_modules/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
