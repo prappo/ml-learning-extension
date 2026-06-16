@@ -371,6 +371,41 @@
     if (vizController) { vizController.toggle(); updateVizControls(); }
   });
 
+  // Global keyboard shortcuts — ignored while typing in the editor / search box.
+  document.addEventListener("keydown", (e) => {
+    const ae = document.activeElement;
+    const typing = ae && (ae.tagName === "TEXTAREA" || ae.tagName === "INPUT" || ae.isContentEditable);
+    if (typing) return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return; // don't hijack browser shortcuts
+
+    const stepViz = (dir) => {
+      if (vizController) { vizController.step(dir); updateVizControls(); }
+    };
+
+    switch (e.key) {
+      case "ArrowRight":
+      case "j":
+      case "J":
+        e.preventDefault(); step(1); break;
+      case "ArrowLeft":
+      case "k":
+      case "K":
+        e.preventDefault(); step(-1); break;
+      case "r":
+      case "R":
+        e.preventDefault(); selectSnippet(pickRandom()); break;
+      case " ": // Space — play/pause the visualization
+        if (ae && ae.tagName === "BUTTON") return; // let a focused button handle Space itself
+        e.preventDefault();
+        if (vizController) { vizController.toggle(); updateVizControls(); }
+        break;
+      case "[":
+        e.preventDefault(); stepViz(-1); break;
+      case "]":
+        e.preventDefault(); stepViz(1); break;
+    }
+  });
+
   // Reset progress ticks (two clicks to confirm — avoids accidental wipe).
   let resetArmed = false;
   let resetTimer = null;

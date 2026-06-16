@@ -97,16 +97,26 @@ node scripts/fetch-pyodide.mjs        # downloads ./pyodide (~145 MB)
 
 ## Keyboard shortcuts
 
-These work while the **code editor** is focused:
+**Global** — work anywhere *except* while typing in the editor or search box:
 
 | Shortcut | Action |
 | -------- | ------ |
-| `Ctrl` + `Enter` (`Cmd` + `Enter` on macOS) | Run the code in the editor |
+| `→` or `J` | Next topic |
+| `←` or `K` | Previous topic |
+| `R` | Jump to a random topic |
+| `Space` | Play / pause the visualization |
+| `[` / `]` | Step the visualization back / forward |
+
+**In the code editor:**
+
+| Shortcut | Action |
+| -------- | ------ |
+| `Ctrl` + `Enter` (`Cmd` + `Enter` on macOS) | Run the code |
 | `Tab` | Insert 4 spaces (indent) instead of moving focus |
 
-Everything else is a click: **▶ Run**, **‹ Prev / Next ›**, **🎲 Random**,
-**↺ Reset**, **⤵ Load into editor**, and the visualization controls
-(**⏮ ⏸/▶ ⏭**).
+The same actions are also available as buttons: **▶ Run**, **‹ Prev / Next ›**,
+**🎲 Random**, **↺ Reset**, **⤵ Load into editor**, and the visualization
+controls (**⏮ ⏸/▶ ⏭**).
 
 ## Fully local — works offline
 
