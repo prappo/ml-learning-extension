@@ -50,8 +50,13 @@
         <h2 id="snippet-title">Loading…</h2>
         <p id="snippet-desc" class="desc"></p>
         <div class="viz-wrap">
-          <span class="viz-label">▶ live visualization</span>
+          <span class="viz-label">live visualization</span>
           <canvas id="viz" class="viz"></canvas>
+          <div id="viz-controls" class="viz-controls">
+            <button id="viz-prev" title="Step back">⏮</button>
+            <button id="viz-play" title="Play / pause">⏸</button>
+            <button id="viz-next" title="Step forward">⏭</button>
+          </div>
         </div>
         <pre class="reference"><code id="snippet-code"></code></pre>
         <div id="walkthrough" class="walkthrough"></div>

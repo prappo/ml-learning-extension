@@ -43,10 +43,15 @@
     return Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v);
   }
 
-  // animation loop with crisp HiDPI sizing
-  function start(canvas, draw) {
+  // animation loop with crisp HiDPI sizing.
+  // Driven by a virtual clock so it can be paused / stepped:
+  //   - plays by advancing virtual time each frame
+  //   - pause() freezes it; play() resumes; step(±1) nudges and pauses
+  // Returns a controller: { stop, play, pause, toggle, isPlaying, step }.
+  function start(canvas, draw, opts) {
     const ctx = canvas.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
+    const STEP = (opts && opts.step) || 0.8; // seconds jumped by next/prev
     function resize() {
       const r = canvas.getBoundingClientRect();
       canvas.width = Math.max(1, Math.floor(r.width * dpr));
@@ -54,17 +59,31 @@
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     resize();
-    let raf, t0 = null, alive = true;
+    let raf, lastTs = null, alive = true, playing = true, vtime = 0;
     function frame(ts) {
       if (!alive) return;
-      if (t0 === null) t0 = ts;
+      if (lastTs === null) lastTs = ts;
+      const dt = (ts - lastTs) / 1000;
+      lastTs = ts;
+      if (playing) vtime += dt;
       const r = canvas.getBoundingClientRect();
+      // re-measure if the canvas was sized while hidden, or the window resized
+      if (Math.floor(r.width * dpr) !== canvas.width || Math.floor(r.height * dpr) !== canvas.height) {
+        resize();
+      }
       ctx.clearRect(0, 0, r.width, r.height);
-      draw(ctx, r.width, r.height, (ts - t0) / 1000);
+      draw(ctx, r.width, r.height, vtime);
       raf = requestAnimationFrame(frame);
     }
     raf = requestAnimationFrame(frame);
-    return { stop() { alive = false; cancelAnimationFrame(raf); } };
+    return {
+      stop() { alive = false; cancelAnimationFrame(raf); },
+      play() { playing = true; },
+      pause() { playing = false; },
+      toggle() { playing = !playing; return playing; },
+      isPlaying() { return playing; },
+      step(dir) { playing = false; vtime = Math.max(0, vtime + dir * STEP); },
+    };
   }
 
   function dot(ctx, x, y, r, color) {
@@ -165,7 +184,7 @@
   /* ---------------- 3. binary search ---------------- */
   VIZ["algo-binary-search"] = (canvas) => {
     const arr = [2, 5, 8, 12, 16, 23, 38, 45, 56, 72, 91];
-    const target = 23, steps = [];
+    const target = 72, steps = [];
     (function build() {
       let lo = 0, hi = arr.length - 1;
       while (lo <= hi) {
@@ -678,6 +697,230 @@
       });
       const note = temp < 0.7 ? "  (focused)" : temp > 1.4 ? "  (creative)" : "";
       label(ctx, "temperature = " + temp.toFixed(2) + note, pad, pad - 14, C.text, "left", 12);
+    });
+  };
+
+  /* ---------------- 22. merge sort ---------------- */
+  VIZ["algo-merge-sort"] = (canvas) => {
+    const base = [5, 2, 8, 1, 9, 3, 7, 4];
+    const steps = [];
+    (function build() {
+      const a = base.slice(), n = a.length;
+      for (let wdt = 1; wdt < n; wdt *= 2) {
+        for (let lo = 0; lo < n; lo += 2 * wdt) {
+          const mid = Math.min(lo + wdt, n), hi = Math.min(lo + 2 * wdt, n);
+          const merged = [];
+          let i = lo, j = mid;
+          while (i < mid && j < hi) merged.push(a[i] <= a[j] ? a[i++] : a[j++]);
+          while (i < mid) merged.push(a[i++]);
+          while (j < hi) merged.push(a[j++]);
+          for (let k = 0; k < merged.length; k++) a[lo + k] = merged[k];
+          if (hi - lo > 1) steps.push({ state: a.slice(), lo, hi: hi - 1 });
+        }
+      }
+    })();
+    const SD = 0.8, PAUSE = 3, total = steps.length + PAUSE;
+    return start(canvas, (ctx, w, h, t) => {
+      const n = base.length, pad = 26, gap = 8;
+      const idx = Math.min(Math.floor((t / SD) % total), steps.length - 1);
+      const st = steps[idx];
+      const bw = (w - 2 * pad - gap * (n - 1)) / n;
+      const maxv = Math.max.apply(null, base);
+      for (let p = 0; p < n; p++) {
+        const v = st.state[p];
+        const bh = (v / maxv) * (h - 2 * pad);
+        const x = pad + p * (bw + gap), y = h - pad - bh;
+        const active = p >= st.lo && p <= st.hi;
+        ctx.fillStyle = idx >= steps.length - 1 ? C.good : active ? C.warn : C.accent;
+        ctx.fillRect(x, y, bw, bh);
+        label(ctx, String(v), x + bw / 2, y - 8, C.text, "center", 11);
+      }
+      label(ctx, idx >= steps.length - 1 ? "sorted ✓" : "merging two sorted runs…", pad, pad - 12, C.muted, "left", 12);
+    });
+  };
+
+  /* ---------------- 23. recursion + memoization (Fibonacci) ---------------- */
+  VIZ["algo-recursion-memo"] = (canvas) => {
+    const fibs = [];
+    for (let i = 0, a = 0, b = 1; i < 10; i++) { fibs.push(a); const n = a + b; a = b; b = n; }
+    const maxv = fibs[fibs.length - 1];
+    const cycle = 5.5;
+    return start(canvas, (ctx, w, h, t) => {
+      const n = fibs.length, pad = 30, gap = 8;
+      const tt = t % cycle;
+      const bw = (w - 2 * pad - gap * (n - 1)) / n;
+      const cur = Math.floor(tt / 0.45);
+      for (let i = 0; i < n; i++) {
+        const grow = clamp((tt - i * 0.45) / 0.5, 0, 1);
+        if (grow <= 0) continue;
+        const bh = Math.max(2, (fibs[i] / maxv) * (h - 2 * pad) * easeInOut(grow));
+        const x = pad + i * (bw + gap), y = h - pad - bh;
+        const isCur = i === cur && cur < n;
+        ctx.fillStyle = isCur ? C.warn : i === cur - 1 || i === cur - 2 ? C.good : C.accent;
+        ctx.fillRect(x, y, bw, bh);
+        label(ctx, String(fibs[i]), x + bw / 2, y - 8, C.text, "center", 10);
+      }
+      label(ctx, "fib(i) = fib(i-1) + fib(i-2)  — each cached, built up once", pad, pad - 12, C.muted, "left", 12);
+    });
+  };
+
+  /* ---------------- 24. dynamic programming (coin change table) ---------------- */
+  VIZ["algo-dynamic-programming"] = (canvas) => {
+    const coins = [1, 3, 4], amount = 10, INF = 999;
+    const dp = [0];
+    for (let i = 1; i <= amount; i++) dp.push(INF);
+    const snaps = [];
+    for (let a = 1; a <= amount; a++) {
+      let best = INF, fromCoin = -1;
+      for (const c of coins) if (c <= a && dp[a - c] + 1 < best) { best = dp[a - c] + 1; fromCoin = c; }
+      dp[a] = best;
+      snaps.push({ a, dp: dp.slice(), fromCoin });
+    }
+    const SD = 0.6, PAUSE = 3, total = snaps.length + PAUSE;
+    return start(canvas, (ctx, w, h, t) => {
+      const n = amount + 1, pad = 26, gap = 5;
+      const idx = Math.min(Math.floor((t / SD) % total), snaps.length - 1);
+      const snap = snaps[idx];
+      const cw = (w - 2 * pad - gap * (n - 1)) / n;
+      const cy = h / 2, ch = Math.min(40, cw * 1.3);
+      for (let i = 0; i < n; i++) {
+        const filled = i <= snap.a;
+        const x = pad + i * (cw + gap);
+        const isCur = i === snap.a;
+        const isSrc = snap.fromCoin > 0 && i === snap.a - snap.fromCoin;
+        ctx.fillStyle = isCur ? "#3a2f1a" : isSrc ? "#16291b" : filled ? "#222a3a" : "#171a23";
+        ctx.strokeStyle = isCur ? C.warn : isSrc ? C.good : C.grid;
+        ctx.lineWidth = isCur || isSrc ? 2 : 1;
+        ctx.fillRect(x, cy - ch / 2, cw, ch);
+        ctx.strokeRect(x, cy - ch / 2, cw, ch);
+        const val = filled ? (snap.dp[i] >= INF ? "∞" : String(snap.dp[i])) : "";
+        label(ctx, val, x + cw / 2, cy, filled ? C.text : C.muted, "center", 12);
+        label(ctx, String(i), x + cw / 2, cy + ch / 2 + 12, C.muted, "center", 9);
+      }
+      label(ctx, "dp[a] = fewest coins for amount a  (coins: 1, 3, 4)", pad, pad - 10, C.muted, "left", 12);
+    });
+  };
+
+  /* ---------------- 25. stack & queue ---------------- */
+  VIZ["algo-stack-queue"] = (canvas) => {
+    const frames = [
+      { s: [1], q: [1], note: "push / enqueue 1" },
+      { s: [1, 2], q: [1, 2], note: "push / enqueue 2" },
+      { s: [1, 2, 3], q: [1, 2, 3], note: "push / enqueue 3" },
+      { s: [1, 2], q: [2, 3], note: "stack pops 3 (top) · queue removes 1 (front)" },
+      { s: [1, 2, 4], q: [2, 3, 4], note: "push / enqueue 4" },
+      { s: [1, 2], q: [3, 4], note: "stack pops 4 · queue removes 2" },
+      { s: [1], q: [4], note: "stack pops 2 · queue removes 3" },
+    ];
+    const SD = 1.1, total = frames.length + 2;
+    return start(canvas, (ctx, w, h, t) => {
+      const idx = Math.min(Math.floor((t / SD) % total), frames.length - 1);
+      const f = frames[idx];
+      const bw = 64, bh = 30;
+      // Stack (left): vertical, top = last element
+      const sx = w * 0.26;
+      label(ctx, "Stack — LIFO", sx, 26, C.accent, "center", 12);
+      f.s.forEach((v, i) => {
+        const y = h - 44 - i * (bh + 6);
+        const top = i === f.s.length - 1;
+        ctx.fillStyle = top ? C.warn : C.accent;
+        ctx.fillRect(sx - bw / 2, y - bh, bw, bh);
+        label(ctx, String(v), sx, y - bh / 2, "#0b0d13", "center", 12);
+      });
+      if (f.s.length) label(ctx, "top", sx + bw / 2 + 16, h - 44 - (f.s.length - 1) * (bh + 6) - bh / 2, C.muted, "left", 10);
+      // Queue (right): horizontal, front (removed) on the left
+      const qy = h * 0.58, qx0 = w * 0.55;
+      label(ctx, "Queue — FIFO", w * 0.74, 26, C.good, "center", 12);
+      f.q.forEach((v, i) => {
+        const x = qx0 + i * (bw + 6);
+        ctx.fillStyle = i === 0 ? C.warn : C.good;
+        ctx.fillRect(x, qy - bh / 2, bw, bh);
+        label(ctx, String(v), x + bw / 2, qy, "#0b0d13", "center", 12);
+      });
+      if (f.q.length) {
+        label(ctx, "front", qx0 + bw / 2, qy + bh / 2 + 12, C.muted, "center", 10);
+        label(ctx, "back", qx0 + (f.q.length - 1) * (bw + 6) + bw / 2, qy - bh / 2 - 12, C.muted, "center", 10);
+      }
+      label(ctx, f.note, w / 2, h - 14, C.muted, "center", 11);
+    });
+  };
+
+  /* ---------------- 26. tree traversal (BFS & DFS) ---------------- */
+  VIZ["algo-tree-traversal"] = (canvas) => {
+    const pos = {
+      1: [0.5, 0.16], 2: [0.3, 0.5], 3: [0.72, 0.5],
+      4: [0.16, 0.84], 5: [0.42, 0.84], 6: [0.72, 0.84],
+    };
+    const edges = [[1, 2], [1, 3], [2, 4], [2, 5], [3, 6]];
+    const bfs = [1, 2, 3, 4, 5, 6];
+    const dfs = [1, 2, 4, 5, 3, 6];
+    const SD = 0.6, GAP = 2;
+    const phaseLen = bfs.length + GAP;
+    const total = phaseLen * 2;
+    return start(canvas, (ctx, w, h, t) => {
+      const pad = 30;
+      const m = (id) => [pad + pos[id][0] * (w - 2 * pad), pad + pos[id][1] * (h - 2 * pad)];
+      const f = (t / SD) % total;
+      const isBfs = f < phaseLen;
+      const order = isBfs ? bfs : dfs;
+      const step = Math.floor(isBfs ? f : f - phaseLen);
+      const visited = order.slice(0, Math.min(step + 1, order.length));
+      // edges
+      ctx.strokeStyle = C.grid; ctx.lineWidth = 1.5;
+      edges.forEach(([a, b]) => { const pa = m(a), pb = m(b); ctx.beginPath(); ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]); ctx.stroke(); });
+      // nodes
+      Object.keys(pos).forEach((id) => {
+        const p = m(+id);
+        const vi = visited.indexOf(+id);
+        const isCurrent = vi === visited.length - 1 && step < order.length;
+        dot(ctx, p[0], p[1], 16, vi >= 0 ? (isCurrent ? C.warn : C.good) : "#222a3a");
+        ctx.strokeStyle = C.grid; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(p[0], p[1], 16, 0, TAU); ctx.stroke();
+        label(ctx, id, p[0], p[1], vi >= 0 ? "#0b0d13" : C.muted, "center", 13);
+      });
+      label(ctx, (isBfs ? "BFS (level by level): " : "DFS (deepest first): ") + visited.join(" → "), pad, pad - 14, isBfs ? C.accent : C.pink, "left", 12);
+    });
+  };
+
+  /* ---------------- 27. two-sum with a hash map ---------------- */
+  VIZ["algo-two-sum"] = (canvas) => {
+    const nums = [2, 7, 11, 15], target = 9;
+    const steps = [];
+    const seen = {};
+    for (let i = 0; i < nums.length; i++) {
+      const need = target - nums[i];
+      const found = need in seen;
+      steps.push({ i, seenKeys: Object.keys(seen).map(Number), found, partner: found ? seen[need] : -1, need });
+      if (found) break;
+      seen[nums[i]] = i;
+    }
+    const SD = 1.4, PAUSE = 3, total = steps.length + PAUSE;
+    return start(canvas, (ctx, w, h, t) => {
+      const n = nums.length, pad = 36, gap = 14;
+      const idx = Math.min(Math.floor((t / SD) % total), steps.length - 1);
+      const st = steps[idx];
+      const cw = (w - 2 * pad - gap * (n - 1)) / n;
+      const cy = h * 0.42, ch = Math.min(54, cw);
+      for (let k = 0; k < n; k++) {
+        const x = pad + k * (cw + gap);
+        const isCur = k === st.i && !st.found;
+        const isPair = st.found && (k === st.i || k === st.partner);
+        ctx.fillStyle = isPair ? "#16291b" : isCur ? "#3a2f1a" : "#222a3a";
+        ctx.strokeStyle = isPair ? C.good : isCur ? C.warn : C.grid;
+        ctx.lineWidth = isPair || isCur ? 2.5 : 1;
+        ctx.fillRect(x, cy - ch / 2, cw, ch); ctx.strokeRect(x, cy - ch / 2, cw, ch);
+        label(ctx, String(nums[k]), x + cw / 2, cy, C.text, "center", 14);
+        label(ctx, "[" + k + "]", x + cw / 2, cy + ch / 2 + 12, C.muted, "center", 9);
+      }
+      if (st.found) {
+        const a = m(st.partner), b = m(st.i);
+        ctx.strokeStyle = C.good; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(a, cy - ch / 2 - 6); ctx.lineTo(b, cy - ch / 2 - 6); ctx.stroke();
+        label(ctx, "found! " + nums[st.partner] + " + " + nums[st.i] + " = " + target, pad, pad - 16, C.good, "left", 12);
+      } else {
+        label(ctx, "target = " + target + "  ·  need " + st.need + " for nums[" + st.i + "]=" + nums[st.i], pad, pad - 16, C.muted, "left", 12);
+      }
+      function m(k) { return pad + k * (cw + gap) + cw / 2; }
+      label(ctx, "seen so far: { " + st.seenKeys.join(", ") + " }", pad, h - 16, C.accent, "left", 12);
     });
   };
 

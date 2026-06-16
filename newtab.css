@@ -353,6 +353,33 @@ body {
   border: 1px solid var(--border);
   border-radius: 8px;
 }
+.viz-controls {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.viz-controls button {
+  width: 38px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  transition: background 0.15s, border-color 0.15s;
+}
+.viz-controls button:hover {
+  background: #232838;
+  border-color: #3a4156;
+}
+.viz-controls #viz-play {
+  background: rgba(110, 168, 254, 0.16);
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .reference {
   flex: 1;
   /* floor so the code stays visible even when a long walkthrough sits below it */

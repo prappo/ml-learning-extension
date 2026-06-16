@@ -24,6 +24,10 @@
     walkthrough: $("walkthrough"),
     explain: $("explain"),
     viz: $("viz"),
+    vizControls: $("viz-controls"),
+    vizPrev: $("viz-prev"),
+    vizPlay: $("viz-play"),
+    vizNext: $("viz-next"),
     editor: $("editor"),
     highlight: $("highlight").querySelector("code"),
     gutter: $("gutter"),
@@ -167,17 +171,23 @@
       vizController = null;
     }
     const factory = window.VIZ && window.VIZ[s.id];
+    const wrap = els.viz.closest(".viz-wrap");
+    // show the panel BEFORE creating the animation so the canvas has a real size
+    if (wrap) wrap.style.display = factory ? "block" : "none";
     if (factory) {
-      els.viz.style.display = "block";
       try {
-        vizController = factory(els.viz);
+        vizController = factory(els.viz); // starts playing by default
       } catch (e) {
         console.warn("viz error:", e);
-        els.viz.style.display = "none";
+        vizController = null;
+        if (wrap) wrap.style.display = "none";
       }
-    } else {
-      els.viz.style.display = "none";
     }
+    updateVizControls();
+  }
+
+  function updateVizControls() {
+    if (vizController) els.vizPlay.textContent = vizController.isPlaying() ? "⏸" : "▶";
   }
 
   function currentIndex() {
@@ -349,6 +359,17 @@
     clearOutput();
   });
   els.search.addEventListener("input", (e) => applySearch(e.target.value));
+
+  // visualization playback controls
+  els.vizPrev.addEventListener("click", () => {
+    if (vizController) { vizController.step(-1); updateVizControls(); }
+  });
+  els.vizNext.addEventListener("click", () => {
+    if (vizController) { vizController.step(1); updateVizControls(); }
+  });
+  els.vizPlay.addEventListener("click", () => {
+    if (vizController) { vizController.toggle(); updateVizControls(); }
+  });
 
   // Reset progress ticks (two clicks to confirm — avoids accidental wipe).
   let resetArmed = false;
