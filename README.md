@@ -95,6 +95,19 @@ node scripts/fetch-pyodide.mjs        # downloads ./pyodide (~145 MB)
   **⤵ Load into editor** drops the reference code in if you get stuck.
 - **↺ Reset** (top bar) clears your green ✓ progress ticks (click twice to confirm).
 
+## Keyboard shortcuts
+
+These work while the **code editor** is focused:
+
+| Shortcut | Action |
+| -------- | ------ |
+| `Ctrl` + `Enter` (`Cmd` + `Enter` on macOS) | Run the code in the editor |
+| `Tab` | Insert 4 spaces (indent) instead of moving focus |
+
+Everything else is a click: **▶ Run**, **‹ Prev / Next ›**, **🎲 Random**,
+**↺ Reset**, **⤵ Load into editor**, and the visualization controls
+(**⏮ ⏸/▶ ⏭**).
+
 ## Fully local — works offline
 
 The Pyodide runtime **and** all ML packages (numpy, scipy, pandas,
